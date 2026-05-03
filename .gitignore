@@ -1,0 +1,15 @@
+# IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# Build outputs
+build/
+out/
+
+# Local runtime data
+data/
+
+# Local environment
+.env

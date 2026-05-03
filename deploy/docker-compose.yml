@@ -1,0 +1,36 @@
+services:
+  openbao:
+    image: ghcr.io/openbao/openbao:2.5.3
+    container_name: common-config-openbao
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      COMMON_CONFIG_OPENBAO_TOKEN: "${COMMON_CONFIG_OPENBAO_TOKEN}"
+    command: [ "/bin/sh", "/usr/local/bin/openbao-bootstrap.sh" ]
+    volumes:
+      - openbao-data:/openbao/data
+      - ./openbao/bootstrap.sh:/usr/local/bin/openbao-bootstrap.sh:ro
+    healthcheck:
+      test: [ "CMD", "bao", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  common-config:
+    profiles:
+      - app
+    image: ${COMMON_CONFIG_IMAGE:-common-config:latest}
+    container_name: common-config-server
+    depends_on:
+      - openbao
+    ports:
+      - "8080:8080"
+    environment:
+      OPENBAO_ADDR: "http://openbao:8200"
+      OPENBAO_TOKEN: "${COMMON_CONFIG_OPENBAO_TOKEN}"
+      SPRING_PROFILES_ACTIVE: "onprem"
+
+volumes:
+  openbao-data:

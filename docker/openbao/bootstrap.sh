@@ -4,7 +4,7 @@ set -eu
 # Learning-only bootstrap:
 # - runs OpenBao with Raft storage
 # - initializes and unseals automatically
-# - creates a fixed common-config policy token
+# - creates a fixed root-equivalent docker token
 
 cat > /tmp/openbao.hcl <<'EOF'
 ui = true
@@ -52,12 +52,8 @@ export BAO_TOKEN="$root_token"
 bao secrets enable -path=kv -version=2 kv >/tmp/openbao-enable-kv.txt 2>&1 || true
 
 cat > /tmp/common-config-policy.hcl <<'EOF'
-path "kv/data/*" {
-  capabilities = ["create", "read", "update", "delete", "list"]
-}
-
-path "kv/metadata/*" {
-  capabilities = ["read", "list", "delete"]
+path "*" {
+  capabilities = ["create", "read", "update", "delete", "list", "patch", "sudo"]
 }
 EOF
 

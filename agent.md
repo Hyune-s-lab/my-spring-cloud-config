@@ -8,7 +8,6 @@
 - 솔루션 리서치와 결론: [docs/01-solution-research.md](docs/01-solution-research.md)
 - 초기 아키텍처: [docs/02-architecture.md](docs/02-architecture.md)
 - 코드 컨벤션: [docs/03-code-conventions.md](docs/03-code-conventions.md)
-- future 런타임 refresh: [docs/04-best-practice-sequences.md](docs/04-best-practice-sequences.md)
 
 ## 작업 규칙
 
@@ -21,6 +20,6 @@
 ## 현재 방향
 
 - 핵심 방향은 OpenBao를 UI/저장소/audit 계층으로 두고, Spring 서비스는 Spring Cloud Config Server의 Vault/OpenBao backend를 사용하게 하는 것입니다.
-- Common Config Server의 수동 구현 범위는 프론트 refresh/fetch projection API로 제한합니다.
-- 프론트는 명시적으로 refresh/fetch 해서 최신 설정을 가져갑니다.
+- Common Config Server는 우선 Spring Cloud Config 표준 조회 서버로만 동작합니다.
+- 프론트도 우선 Spring Cloud Config HTTP 응답을 명시적으로 조회해서 최신 설정을 가져갑니다.
 - Python, Node.js 등 비 Spring 서비스의 HTTP 기반 조회 방식은 future 범위에서 검토합니다.

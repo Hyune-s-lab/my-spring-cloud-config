@@ -43,7 +43,7 @@
 
 - 회사 공통 설정 관리 서버를 온프레미스 친화적으로 제공합니다.
 - 첫 관리 도메인은 피쳐 플래그로 시작하고, 이후 일반 설정 관리로 확장할 수 있게 설계합니다.
-- 서버 API와 관리자 UI는 하나의 배포 단위에서 제공합니다.
+- 관리 UI와 저장소는 OpenBao를 우선 사용하고, common-config 서버는 Spring Cloud Config 표준 조회 API를 제공합니다.
 - 첫 마일스톤부터 audit/history와 다언어 서비스 소비 방식을 고려합니다.
 - 런타임 설정 변경은 명시적 refresh/fetch로 시작하고, 이후 확장 경로를 남깁니다.
 
@@ -51,11 +51,11 @@
 
 - 별도 외부 DB, Git 저장소, Vercel/AWS 같은 managed service를 필수 의존성으로 두지 않습니다.
 - 서버 push 기반 런타임 refresh와 고급 승인 워크플로우는 우선 제외합니다.
-- 프론트는 별도 배포하지 않고 common-config 서버에서 함께 제공합니다.
+- 별도 관리자 프론트를 직접 구현하지 않습니다.
 
 ## 기능 요구사항
 
-- 피쳐 플래그의 CRUD와 환경별 활성화/entitlement 관리를 지원합니다.
-- 변경 메타데이터와 append-only history를 남겨 누가, 언제, 무엇을 바꿨는지 확인할 수 있어야 합니다.
-- 관리자는 UI에서 플래그를 탐색하고 수정할 수 있어야 합니다.
-- 프론트, Spring 서비스, Node.js/Python 서비스가 HTTP 기반으로 명시적 refresh/fetch를 할 수 있어야 합니다.
+- OpenBao UI에서 피쳐 플래그 설정을 생성, 조회, 수정, 삭제할 수 있어야 합니다.
+- OpenBao KV v2 versioning과 audit device로 변경 이력 기반을 남깁니다.
+- common-config 서버는 Spring Cloud Config 표준 HTTP API로 설정을 조회할 수 있어야 합니다.
+- 프론트와 Spring 서비스는 우선 같은 Spring Cloud Config HTTP 응답을 명시적으로 조회합니다.

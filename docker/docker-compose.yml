@@ -1,3 +1,5 @@
+name: common-config
+
 services:
   openbao:
     image: ghcr.io/openbao/openbao:2.5.3
@@ -6,8 +8,10 @@ services:
       - IPC_LOCK
     ports:
       - "8200:8200"
+    env_file:
+      - .env
     environment:
-      COMMON_CONFIG_OPENBAO_TOKEN: "${COMMON_CONFIG_OPENBAO_TOKEN}"
+      BAO_ADDR: "http://127.0.0.1:8200"
     command: [ "/bin/sh", "/usr/local/bin/openbao-bootstrap.sh" ]
     volumes:
       - openbao-data:/openbao/data
@@ -19,17 +23,21 @@ services:
       retries: 12
 
   common-config:
-    profiles:
-      - app
+    build:
+      context: ..
+      dockerfile: Dockerfile
     image: ${COMMON_CONFIG_IMAGE:-common-config:latest}
     container_name: common-config-server
     depends_on:
       - openbao
     ports:
-      - "8080:8080"
+      - "8085:8085"
+    env_file:
+      - .env
     environment:
-      OPENBAO_ADDR: "http://openbao:8200"
-      OPENBAO_TOKEN: "${COMMON_CONFIG_OPENBAO_TOKEN}"
+      OPENBAO_HOST: "openbao"
+      OPENBAO_PORT: "8200"
+      OPENBAO_SCHEME: "http"
       SPRING_PROFILES_ACTIVE: "onprem"
 
 volumes:

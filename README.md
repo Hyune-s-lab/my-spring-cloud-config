@@ -9,8 +9,3 @@
 - [솔루션 리서치](docs/01-solution-research.md)
 - [초기 아키텍처](docs/02-architecture.md)
 - [코드 컨벤션](docs/03-code-conventions.md)
-- [Future Runtime Refresh](docs/04-best-practice-sequences.md)
-
-## 배포
-
-- [On-prem Docker Compose](deploy/README.md)

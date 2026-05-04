@@ -98,7 +98,7 @@ sequenceDiagram
     actor Admin as Admin/Operator
     participant Bao as OpenBao
     participant Config as Spring Cloud Config Server
-    participant Broker as RabbitMQ/Kafka Broker
+    participant Broker as Message Queue
     participant App as A Service 1..N
     Admin ->> Bao: OpenBao UI에서 설정 변경
     Bao ->> Admin: 저장 완료

@@ -9,7 +9,7 @@ OpenBao를 설정 저장소와 관리자 UI로 사용하고, Spring Cloud Config
 
 ## Phase 1
 
-- OpenBao 2.5.3을 KV v2 저장소와 관리자 UI로 사용합니다.
+- OpenBao 를 KV v2 저장소와 관리자 UI로 사용합니다.
 - common-config 서버는 Spring Cloud Config Server로 동작합니다.
 - 설정 조회는 OpenBao KV v2의 latest 값만 대상으로 합니다.
 - OpenBao version, created_time, audit 이력은 Spring Config 응답에 포함하지 않습니다.
@@ -34,65 +34,29 @@ sequenceDiagram
 ## 실행
 
 ```bash
+# Docker Compose
 docker compose -f docker/docker-compose.yml up -d --build
-```
 
-OpenBao UI:
-
-```text
-http://localhost:8200
-```
-
-OpenBao token:
-
-```text
-example
-```
-
-common-config Swagger:
-
-```text
-http://localhost:8085/swagger-ui.html
-```
-
-## 샘플 데이터
-
-```bash
+# 샘플 데이터 생성
 python3 docker/openbao/sample-config.py --create
-```
 
-삭제:
-
-```bash
+# 샘플 데이터 삭제
 python3 docker/openbao/sample-config.py --clear
 ```
 
 ## 설정 조회
 
-Spring Config Environment:
-
-```http
-GET http://localhost:8085/config/some-frontend/dev
-```
-
-포맷 변환 endpoint:
-
-```http
-GET http://localhost:8085/config/some-frontend-dev.json
-GET http://localhost:8085/config/some-frontend-dev.yml
-```
-
-응답 예시:
-
 ```json
+GET http://localhost:8085/config/some-frontend/dev
+
 {
   "name": "some-frontend",
   "profiles": [
     "dev"
   ],
-  "label": null,
-  "version": null,
-  "state": null,
+  "label": null, // Git branch/tag용. Vault/OpenBao 대응값 없음
+  "version": null, // Git commit hash용. OpenBao KV version은 path별 metadata
+  "state": null, // backend 추가 상태용. Vault/OpenBao backend는 보통 미사용
   "propertySources": [
     {
       "name": "vault:some-frontend/dev",

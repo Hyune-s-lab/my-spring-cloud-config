@@ -41,6 +41,19 @@
 - Actuator refresh와 Spring Cloud Bus로 런타임 refresh 확장이 가능합니다.
 - 프론트/비 Spring 서비스는 우선 Spring Cloud Config HTTP API를 사용하고, 필요해지면 별도 REST projection API와 polling/ETag/SSE 방식을 추가합니다.
 
+#### Spring Runtime Refresh 판단 기준
+
+Spring Cloud Config는 설정을 key 단위로 부분 조회하기보다 `application/profile` 단위로 `Environment`를 다시 읽습니다. 런타임 반영 범위는 Config Server가 아니라 각 Spring 애플리케이션의 bean 설계로 제한합니다.
+
+| 구분 | 의미 | 예시 | 판단 |
+|------|------|------|------|
+| 조회 단위 | Config Server가 원격 설정을 다시 읽는 단위 | `GET /config/my-service/dev` | profile source 전체를 다시 읽습니다. |
+| 저장 단위 | OpenBao KV v2 path 단위 | `kv/my-service/dev` | 30개 변수 중 1개가 바뀌어도 path 전체가 새 version이 됩니다. |
+| 런타임 반영 단위 | 애플리케이션 내부 bean/properties 단위 | `@RefreshScope`, `@ConfigurationProperties` | 자주 바뀌는 2개 값만 별도 prefix/properties class로 분리합니다. |
+| 변경 전파 | refresh를 시작하는 신호 | `POST /actuator/refresh`, `POST /actuator/busrefresh` | OpenBao webhook이 없으므로 별도 trigger가 필요합니다. |
+
+따라서 30개 설정 중 2개만 자주 바뀐다면, 원격 설정은 함께 조회하되 자주 바뀌는 값만 별도 prefix와 bean으로 분리해 refresh 대상이 되게 설계합니다.
+
 출처: [Spring Cloud Config Vault Backend](https://docs.spring.io/spring-cloud-config/reference/server/environment-repository/vault-backend.html), [Composite Environment Repositories](https://docs.spring.io/spring-cloud-config/reference/server/environment-repository/composite-repositories.html), [Push Notifications and Spring Cloud Bus](https://docs.spring.io/spring-cloud-config/reference/server/push-notifications-and-bus.html), [Spring Cloud Bus](https://docs.spring.io/spring-cloud-bus/docs/current/reference/html/index.html), [OpenBao Libraries](https://openbao.org/api-docs/libraries/), [OpenBao Migration Guide](https://openbao.org/docs/migration-guide/)
 
 ### Unleash

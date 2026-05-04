@@ -92,6 +92,7 @@ Spring 서비스의 runtime refresh가 필요해지면 Actuator refresh와 Sprin
 - OpenBao는 KV 변경 webhook callback을 제공하지 않으므로 refresh trigger는 별도로 필요합니다.
 - Config Server와 대상 Spring 서비스 모두 Spring Cloud Bus dependency와 broker 설정이 필요합니다.
 - `POST /actuator/busrefresh`는 설정 값을 push하지 않고, 각 서비스가 재조회하도록 refresh 이벤트만 전파합니다.
+- Bus 이벤트를 받은 서비스는 Spring Cloud Config Client 흐름으로 `/config/{application}/{profile}`을 다시 조회합니다.
 
 ```mermaid
 sequenceDiagram
@@ -107,7 +108,7 @@ sequenceDiagram
     Admin ->> Config: POST /actuator/busrefresh
     Config ->> Broker: refresh 이벤트 publish
     Broker ->> App: 각 인스턴스에 refresh 이벤트 전파
-    App ->> Config: 설정 재조회
+    App ->> Config: GET /config/{application}/{profile}
     Config ->> Bao: Vault backend로 KV v2 설정 조회
     Config ->> App: Spring Environment 응답
     App ->> App: refresh scope 값 재바인딩

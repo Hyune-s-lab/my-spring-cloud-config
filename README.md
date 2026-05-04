@@ -2,6 +2,14 @@
 
 OpenBao를 설정 저장소와 관리자 UI로 사용하고, Spring Cloud Config 표준 API로 설정을 조회하는 common-config 서버입니다.
 
+## Requirements
+
+- Vercel, AWS, 관리형 DB, Git 서버 없이 온프레미스에서 실행할 수 있어야 합니다.
+- 피쳐 토글을 첫 관리 도메인으로 시작하고, 이후 공통 설정 관리로 확장할 수 있어야 합니다.
+- 설정 관리 UI, version history, audit 기반을 첫 단계부터 가져야 합니다.
+- 프론트와 Spring 서비스가 HTTP로 설정을 명시적으로 조회할 수 있어야 합니다.
+- 별도 관리자 프론트, 고급 승인 워크플로우, 서버 push 기반 runtime refresh는 Phase 1 범위에서 제외합니다.
+
 ## Phase 1
 
 - OpenBao 2.5.3을 KV v2 저장소와 관리자 UI로 사용합니다.

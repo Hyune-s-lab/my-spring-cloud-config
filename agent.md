@@ -6,7 +6,6 @@
 
 - 요구사항: [docs/00-requirements.md](docs/00-requirements.md)
 - 솔루션 리서치와 결론: [docs/01-solution-research.md](docs/01-solution-research.md)
-- 초기 아키텍처: [docs/02-architecture.md](docs/02-architecture.md)
 
 ## 작업 규칙
 

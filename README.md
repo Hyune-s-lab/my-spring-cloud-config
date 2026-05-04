@@ -110,4 +110,3 @@ GET http://localhost:8085/config/some-frontend-dev.yml
 - [Agent notes](agent.md)
 - [요구사항](docs/00-requirements.md)
 - [솔루션 리서치](docs/01-solution-research.md)
-- [초기 아키텍처](docs/02-architecture.md)

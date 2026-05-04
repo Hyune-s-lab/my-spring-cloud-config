@@ -13,7 +13,6 @@ OpenBao를 설정 저장소와 관리자 UI로 사용하고, Spring Cloud Config
 - common-config 서버는 Spring Cloud Config Server로 동작합니다.
 - 설정 조회는 OpenBao KV v2의 latest 값만 대상으로 합니다.
 - OpenBao version, created_time, audit 이력은 Spring Config 응답에 포함하지 않습니다.
-- OpenBao는 KV 변경 webhook callback을 제공하지 않으므로 소비자가 명시적으로 조회합니다.
 
 ```mermaid
 sequenceDiagram

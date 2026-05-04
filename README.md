@@ -23,11 +23,11 @@ sequenceDiagram
     end
     participant Client as Client
     Admin ->> Bao: OpenBao UI에서 설정 변경
-    Bao ->> Bao: Raft storage 에 저장
+    Bao ->> Bao: POST /v1/kv/data/{application}/{profile}
     Bao ->> Admin: 저장 완료
     Note over Bao, Client: OpenBao는 KV 변경 webhook callback을 제공하지 않음
     Client ->> Config: GET /config/{application}/{profile}
-    Config ->> Bao: Vault/OpenBao backend로 KV 조회
+    Config ->> Bao: GET /v1/kv/data/{application}/{profile}
     Config ->> Client: Spring Config Environment 응답
 ```
 
@@ -102,14 +102,15 @@ sequenceDiagram
     participant Broker as Message Queue
     participant App as A Service 1..N
     Admin ->> Bao: OpenBao UI에서 설정 변경
+    Bao ->> Bao: POST /v1/kv/data/{application}/{profile}
     Bao ->> Admin: 저장 완료
     Note over Admin, Config: OpenBao는 KV 변경 webhook callback을 제공하지 않음
     Note over Config, App: Config Server와 A Service 1..N 모두 Bus에 연결되어 있어야 함
     Admin ->> Config: POST /actuator/busrefresh
-    Config ->> Broker: refresh 이벤트 publish
-    Broker ->> App: 각 인스턴스에 refresh 이벤트 전파
+    Config ->> Broker: Spring Cloud Bus refresh event publish
+    Broker ->> App: Spring Cloud Bus refresh event consume
     App ->> Config: GET /config/{application}/{profile}
-    Config ->> Bao: Vault backend로 KV v2 설정 조회
+    Config ->> Bao: GET /v1/kv/data/{application}/{profile}
     Config ->> App: Spring Environment 응답
     App ->> App: refresh scope 값 재바인딩
 ```

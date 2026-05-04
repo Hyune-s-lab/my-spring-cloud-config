@@ -14,7 +14,7 @@
 | Solution                   | Self-hosted           | SDK/API                          | UI | Audit/Persistence                     | Runtime Updates       | Pros                                                                               | Cons                                                                                              |
 |----------------------------|-----------------------|----------------------------------|----|---------------------------------------|-----------------------|------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
 | OpenBao                    | ✅                     | ✅ HTTP API<br>⚠️ generic clients | ✅  | ✅ KV v2 versioning<br>✅ audit devices | ⚠️ polling/ETag 직접 구현 | versioned KV, audit, policy, UI를 self-hosted로 제공합니다.                                | feature flag 제품은 아니므로 도메인 검증, projection API, refresh contract는 직접 구현해야 합니다.                       |
-| Spring Cloud Config        | ✅                     | ✅ HTTP API<br>✅ Spring client    | ❌  | ⚠️ Vault backend 사용                    | ✅ Actuator/Bus 확장     | Vault/OpenBao backend, Spring client, refresh 흐름을 공식 기능으로 제공합니다.                      | 관리자 UI와 feature flag projection은 제공하지 않으므로 필요해지면 facade를 추가합니다.                                      |
+| Spring Cloud Config        | ✅                     | ✅ HTTP API<br>✅ Spring client    | ❌  | ⚠️ Vault backend 사용                    | ✅ Actuator/Bus 확장     | Vault/OpenBao backend, Spring client, refresh 흐름을 공식 기능으로 제공합니다.                      | feature flag evaluation은 소비 애플리케이션이 직접 처리합니다.<br>필요해지면 facade를 추가합니다.                             |
 | Unleash                    | ⚠️ Enterprise license | ✅ 다언어 SDK                        | ✅  | ⚠️ PostgreSQL 필수<br>⚠️ audit 제한       | ✅ SDK polling/cache   | feature flag 도메인이 성숙하고 self-hosted, 관리자 UI, 다언어 SDK를 제공합니다.                         | OSS는 project 1개, environment 2개 제한이 있어 `local/dev/qa/live/jp-live` 요구와 충돌합니다. PostgreSQL 운영도 필요합니다. |
 | OpenFeature                | ✅                     | ✅ 표준 SDK/API                     | ❌  | ❌ 제공 안 함                              | ⚠️ provider 구현 의존     | Java/Kotlin, Node.js, Python 등에서 flag evaluation API를 표준화할 수 있습니다.                   | 서버 제품이 아니므로 관리자 UI, 저장소, audit/history, runtime update 경로는 별도로 필요합니다.                              |
 | Vercel Edge Config / Flags | ❌                     | ⚠️ OpenFeature 지원                | ✅  | ✅ Vercel managed                      | ✅ platform 제공         | dashboard, targeting, segment, environment control, OpenFeature 지원 등 UX 참고 가치가 큽니다. | Vercel 플랫폼 의존으로 self-hosted가 불가능하므로 핵심 솔루션 후보에서 기각합니다.                                             |
@@ -39,6 +39,7 @@
 - Vault backend는 KV v2를 지원하므로 OpenBao의 Vault-compatible API를 우선 활용할 수 있습니다.
 - Spring client, `Environment`, `PropertySource` 모델과 잘 맞습니다.
 - Actuator refresh와 Spring Cloud Bus로 런타임 refresh 확장이 가능합니다.
+- feature flag evaluation은 제공하지 않으므로, Phase 1에서는 프론트가 조회된 설정 값을 직접 판단합니다.
 - 프론트/비 Spring 서비스는 우선 Spring Cloud Config HTTP API를 사용하고, 필요해지면 별도 REST projection API와 polling/ETag/SSE 방식을 추가합니다.
 
 #### Spring Runtime Refresh 판단 기준

@@ -1,0 +1,9 @@
+.git
+.gradle
+.idea
+build
+**/build
+out
+data
+.env
+.DS_Store

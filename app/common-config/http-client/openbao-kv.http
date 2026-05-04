@@ -1,0 +1,20 @@
+@mount = kv
+@application = some-frontend
+@profile = jp-live
+
+### ─── OpenBao KV v2 원본 조회 ───────────────────────────────────────────────
+
+###
+# @name OpenBao KV v2 data
+GET {{openbaoHost}}/v1/{{mount}}/data/{{application}}/{{profile}}
+X-Vault-Token: {{openbaoToken}}
+
+> {%
+client.test("200", function() { client.assert(response.status === 200); });
+client.test("metadata.version 존재", function() {
+  client.assert(response.body.data.metadata.version >= 1);
+});
+client.test("실제 설정 data 존재", function() {
+  client.assert(response.body.data.data["feature-toggles"]);
+});
+%}

@@ -5,6 +5,7 @@
 .DS_Store
 
 # Build outputs
+.gradle/
 build/
 out/
 
@@ -13,3 +14,4 @@ data/
 
 # Local environment
 .env
+!docker/.env

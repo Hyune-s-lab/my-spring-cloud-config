@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: common-config
+  config:
+    import:
+      - classpath:openbao.yml
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8085
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /openapi
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    display-request-duration: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

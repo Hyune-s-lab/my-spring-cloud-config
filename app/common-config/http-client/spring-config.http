@@ -1,0 +1,37 @@
+@application = some-frontend
+@profile = dev
+
+### ─── Spring Cloud Config 조회 ───────────────────────────────────────────────
+
+###
+# @name 애플리케이션 프로파일 설정 조회
+GET {{host}}/config/{{application}}/{{profile}}
+
+> {%
+
+client.test("200", function() { client.assert(response.status === 200); });
+client.test("propertySources 존재", function() {
+  client.assert(Array.isArray(response.body.propertySources));
+});
+
+%}
+
+###
+# @name 애플리케이션 프로파일 JSON 포맷 조회
+GET {{host}}/config/{{application}}-{{profile}}.json
+
+> {%
+
+client.test("200", function() { client.assert(response.status === 200); });
+
+%}
+
+###
+# @name 애플리케이션 프로파일 YAML 포맷 조회
+GET {{host}}/config/{{application}}-{{profile}}.yml
+
+> {%
+
+client.test("200", function() { client.assert(response.status === 200); });
+
+%}

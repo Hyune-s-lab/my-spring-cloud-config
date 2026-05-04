@@ -31,29 +31,6 @@ sequenceDiagram
     Config ->> Client: Spring Config Environment 응답
 ```
 
-## Future: Spring Runtime Refresh
-
-Spring 서비스의 runtime refresh가 필요해지면 Spring Cloud Bus 기반 전파를 검토합니다. OpenBao는 KV 변경 webhook callback을 제공하지 않으므로 Config Server 또는 운영자가 별도 refresh trigger를 호출해야 합니다.
-
-```mermaid
-sequenceDiagram
-    actor Admin as Admin/Operator
-    participant Bao as OpenBao
-    participant Config as Spring Cloud Config Server
-    participant Broker as RabbitMQ/Kafka Broker
-    participant App as A Service 1..N
-    Admin ->> Bao: OpenBao UI에서 설정 변경
-    Bao ->> Admin: 저장 완료
-    Note over Admin, Config: OpenBao는 KV 변경 webhook callback을 제공하지 않음
-    Admin ->> Config: POST /actuator/busrefresh
-    Config ->> Broker: refresh 이벤트 publish
-    Broker ->> App: 각 인스턴스에 refresh 이벤트 전파
-    App ->> Config: 설정 재조회
-    Config ->> Bao: Vault backend로 KV v2 설정 조회
-    Config ->> App: Spring Environment 응답
-    App ->> App: refresh scope 값 재바인딩
-```
-
 ## 실행
 
 ```bash
@@ -104,6 +81,33 @@ GET http://localhost:8085/config/some-frontend/dev
     }
   ]
 }
+```
+
+## Future: Spring Runtime Refresh
+
+Spring 서비스의 runtime refresh가 필요해지면 Actuator refresh와 Spring Cloud Bus를 검토합니다.
+
+- 단일 인스턴스는 `POST /actuator/refresh`로 설정을 재조회합니다.
+- 스케일아웃 환경은 Spring Cloud Bus로 refresh 이벤트를 전파합니다.
+- OpenBao는 KV 변경 webhook callback을 제공하지 않으므로 refresh trigger는 별도로 필요합니다.
+
+```mermaid
+sequenceDiagram
+    actor Admin as Admin/Operator
+    participant Bao as OpenBao
+    participant Config as Spring Cloud Config Server
+    participant Broker as RabbitMQ/Kafka Broker
+    participant App as A Service 1..N
+    Admin ->> Bao: OpenBao UI에서 설정 변경
+    Bao ->> Admin: 저장 완료
+    Note over Admin, Config: OpenBao는 KV 변경 webhook callback을 제공하지 않음
+    Admin ->> Config: POST /actuator/busrefresh
+    Config ->> Broker: refresh 이벤트 publish
+    Broker ->> App: 각 인스턴스에 refresh 이벤트 전파
+    App ->> Config: 설정 재조회
+    Config ->> Bao: Vault backend로 KV v2 설정 조회
+    Config ->> App: Spring Environment 응답
+    App ->> App: refresh scope 값 재바인딩
 ```
 
 ## 문서

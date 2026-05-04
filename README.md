@@ -9,7 +9,7 @@ OpenBao를 설정 저장소와 관리자 UI로 사용하고, Spring Cloud Config
 
 ## Phase 1
 
-- OpenBao 를 KV v2 저장소와 관리자 UI로 사용합니다.
+- OpenBao를 KV v2 저장소와 관리자 UI로 사용합니다.
 - common-config 서버는 Spring Cloud Config Server로 동작합니다.
 - 설정 조회는 OpenBao KV v2의 latest 값만 대상으로 합니다.
 - OpenBao version, created_time, audit 이력은 Spring Config 응답에 포함하지 않습니다.
@@ -46,6 +46,20 @@ python3 docker/openbao/sample-config.py --clear
 
 ## 설정 조회
 
+로컬 확인은 [spring-config.http](app/common-config/http-client/spring-config.http) 활용을 권장합니다.
+
+Swagger UI:
+
+```text
+http://localhost:8085/swagger-ui.html
+```
+
+OpenBao UI:
+
+```text
+http://localhost:8200
+```
+
 ```json
 GET http://localhost:8085/config/some-frontend/dev
 
@@ -71,6 +85,5 @@ GET http://localhost:8085/config/some-frontend/dev
 
 ## 문서
 
-- [Agent notes](agent.md)
 - [요구사항](docs/00-requirements.md)
 - [솔루션 리서치](docs/01-solution-research.md)

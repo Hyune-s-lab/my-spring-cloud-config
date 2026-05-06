@@ -1,4 +1,5 @@
-@application = some-frontend
+#@application = some-frontend
+@application = some-backend
 @profile = dev
 
 ### ─── Spring Cloud Config 조회 ───────────────────────────────────────────────

@@ -9,10 +9,16 @@ OpenBao를 설정 저장소와 관리자 UI로 사용하고, Spring Cloud Config
 
 ## Phase 1
 
-- OpenBao를 KV v2 저장소와 관리자 UI로 사용합니다.
-- common-config 서버는 Spring Cloud Config Server로 동작합니다.
-- 설정 조회는 OpenBao KV v2의 latest 값만 대상으로 합니다.
-- OpenBao version, created_time, audit 이력은 Spring Config 응답에 포함하지 않습니다.
+OpenBao를 저장소/관리 UI로 두고, common-config 서버는 Spring Cloud Config 표준 조회 API만 제공합니다.
+
+| Concern         | Phase 1                                       | Future                                                   |
+|-----------------|-----------------------------------------------|----------------------------------------------------------|
+| 온프레미스 설치        | OpenBao와 common-config를 Docker Compose로 함께 실행 | K8s 배포 시 OpenBao Raft storage에 PVC를 연결하거나 OpenBao를 독립 운영 |
+| 관리자 UI          | OpenBao UI를 그대로 사용                            | 별도 관리자 UI는 schema, 권한, 승인 흐름이 필요해질 때 추가                  |
+| 설정 조회 API       | Spring Cloud Config 표준 API 사용                 | -                                                        |
+| Feature flag 판단 | 서버가 evaluation하지 않고 소비 애플리케이션이 판단             | -                                                        |
+| Version/history | OpenBao KV v2 version과 audit 기반 사용            | -                                                        |
+| Runtime refresh | 명시적 fetch로 시작                                 | Spring 서비스는 Actuator/Bus, 비 Spring은 별도 client contract 검토 |
 
 ```mermaid
 sequenceDiagram

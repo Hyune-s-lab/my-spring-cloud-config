@@ -20,16 +20,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 
-APPLICATION = "some-frontend"
 ACTION = "create"
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCKER_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -58,39 +55,73 @@ OPENBAO_KV_MOUNT = "kv"
 
 
 SAMPLE_CONFIGS = {
-    "local": {
-        "feature-toggles": {
-            "new-home": True,
-            "beta-search": True,
-            "jp-banner": False,
+    "some-frontend": {
+        "local": {
+            "feature-toggles": {
+                "new-home": True,
+                "beta-search": True,
+                "jp-banner": False,
+            },
+        },
+        "dev": {
+            "feature-toggles": {
+                "new-home": True,
+                "beta-search": True,
+                "jp-banner": False,
+            },
+        },
+        "qa": {
+            "feature-toggles": {
+                "new-home": True,
+                "beta-search": False,
+                "jp-banner": False,
+            },
+        },
+        "live": {
+            "feature-toggles": {
+                "new-home": False,
+                "beta-search": False,
+                "jp-banner": False,
+            },
+        },
+        "jp-live": {
+            "feature-toggles": {
+                "new-home": False,
+                "beta-search": False,
+                "jp-banner": True,
+            },
         },
     },
-    "dev": {
-        "feature-toggles": {
-            "new-home": True,
-            "beta-search": True,
-            "jp-banner": False,
+    "some-backend": {
+        "local": {
+            "SERVER_PORT": "18080",
+            "LOG_LEVEL": "DEBUG",
+            "ENABLE_BATCH_WORKER": "true",
+            "REQUEST_TIMEOUT_MS": "3000",
         },
-    },
-    "qa": {
-        "feature-toggles": {
-            "new-home": True,
-            "beta-search": False,
-            "jp-banner": False,
+        "dev": {
+            "SERVER_PORT": "8080",
+            "LOG_LEVEL": "DEBUG",
+            "ENABLE_BATCH_WORKER": "true",
+            "REQUEST_TIMEOUT_MS": "3000",
         },
-    },
-    "live": {
-        "feature-toggles": {
-            "new-home": False,
-            "beta-search": False,
-            "jp-banner": False,
+        "qa": {
+            "SERVER_PORT": "8080",
+            "LOG_LEVEL": "INFO",
+            "ENABLE_BATCH_WORKER": "true",
+            "REQUEST_TIMEOUT_MS": "5000",
         },
-    },
-    "jp-live": {
-        "feature-toggles": {
-            "new-home": False,
-            "beta-search": False,
-            "jp-banner": True,
+        "live": {
+            "SERVER_PORT": "8080",
+            "LOG_LEVEL": "INFO",
+            "ENABLE_BATCH_WORKER": "false",
+            "REQUEST_TIMEOUT_MS": "5000",
+        },
+        "jp-live": {
+            "SERVER_PORT": "8080",
+            "LOG_LEVEL": "INFO",
+            "ENABLE_BATCH_WORKER": "false",
+            "REQUEST_TIMEOUT_MS": "7000",
         },
     },
 }
@@ -126,18 +157,21 @@ def delete_metadata(addr, token, mount, path):
             raise
 
 
-def target_paths(application):
-    return [f"{application}/{environment}" for environment in SAMPLE_CONFIGS]
+def target_paths(application, environments):
+    return [f"{application}/{environment}" for environment in environments]
 
 
-def legacy_target_paths(application):
-    return [f"{application},{environment}" for environment in SAMPLE_CONFIGS]
+def legacy_target_paths(application, environments):
+    return [f"{application},{environment}" for environment in environments]
 
 
 def clear_sample(args):
-    for path in legacy_target_paths(args.application) + target_paths(args.application):
-        delete_metadata(args.addr, args.token, args.mount, path)
-        print(f"cleared {args.mount}/{path}")
+    for application, environments in SAMPLE_CONFIGS.items():
+        paths = legacy_target_paths(application, environments) + target_paths(application, environments)
+
+        for path in paths:
+            delete_metadata(args.addr, args.token, args.mount, path)
+            print(f"cleared {args.mount}/{path}")
 
 
 def seed_sample(args):
@@ -145,13 +179,14 @@ def seed_sample(args):
         clear_sample(args)
         return
 
-    for environment, data in SAMPLE_CONFIGS.items():
-        path = f"{args.application}/{environment}"
+    for application, environments in SAMPLE_CONFIGS.items():
+        for environment, data in environments.items():
+            path = f"{application}/{environment}"
 
-        delete_metadata(args.addr, args.token, args.mount, f"{args.application},{environment}")
+            delete_metadata(args.addr, args.token, args.mount, f"{application},{environment}")
 
-        put_kv(args.addr, args.token, args.mount, path, data)
-        print(f"seeded {args.mount}/{path}")
+            put_kv(args.addr, args.token, args.mount, path, data)
+            print(f"seeded {args.mount}/{path}")
 
 
 def parse_args():
@@ -163,7 +198,6 @@ def parse_args():
     args.addr = OPENBAO_ADDR
     args.token = OPENBAO_TOKEN
     args.mount = OPENBAO_KV_MOUNT
-    args.application = APPLICATION
 
     cli_create = args.create is True
     cli_clear = args.clear is True

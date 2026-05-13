@@ -46,6 +46,18 @@ sequenceDiagram
 
 로컬 확인은 [spring-config.http](app/common-config/http-client/spring-config.http) 활용을 권장합니다.
 
+### 실행
+
+```bash
+# Git backend
+docker compose -f docker/docker-compose.yml --profile git up -d --build
+python3 docker/gitea/sample-config.py --create
+
+# Vault backend
+docker compose -f docker/docker-compose.yml --profile vault up -d --build
+python3 docker/openbao/sample-config.py --create
+```
+
 Swagger UI:
 
 ```text
@@ -69,9 +81,9 @@ GET http://localhost:8085/config/some-frontend/dev
   "profiles": [
     "dev"
   ],
-  "label": null,
-  "version": "430555036f793ecc9ed118d78eb2ce39ed76092a",
-  "state": "",
+  "label": null, // Git branch/tag 조회에 사용. 생략하면 default label 사용
+  "version": "430555036f793ecc9ed118d78eb2ce39ed76092a", // Git commit hash
+  "state": "", // backend 추가 상태값. 현재 단계에서는 사용하지 않음
   "propertySources": [
     {
       "name": "http://localhost:3100/common-config/config-repo.git/some-frontend-dev.yml",
@@ -94,9 +106,9 @@ GET http://localhost:8085/config/some-frontend/dev
   "profiles": [
     "dev"
   ],
-  "label": null,
-  "version": null,
-  "state": null,
+  "label": null, // Git branch/tag 조회에 사용. Vault backend에서는 대응값 없음
+  "version": null, // Vault KV version은 Spring Config 표준 응답에 포함되지 않음
+  "state": null, // backend 추가 상태값. 현재 단계에서는 사용하지 않음
   "propertySources": [
     {
       "name": "vault:some-frontend/dev",
@@ -107,14 +119,6 @@ GET http://localhost:8085/config/some-frontend/dev
     }
   ]
 }
-```
-
-필드 차이:
-
-```text
-label   Git branch/tag 조회에 사용. label을 생략하면 default label 사용
-version Git backend에서는 commit hash. Vault backend에서는 Spring Config 응답에 포함되지 않음
-state   backend 추가 상태값. 현재 단계에서는 사용하지 않음
 ```
 
 ## Phase 2
@@ -129,18 +133,6 @@ SPRING_PROFILES_ACTIVE=onprem,git
 ## Phase 1
 
 Vault backend를 먼저 지원했습니다. 이때는 backend 선택 분기 없이 Vault-compatible 저장소만 대상으로 했습니다.
-
-## 실행
-
-```bash
-# Git backend
-docker compose -f docker/docker-compose.yml --profile git up -d --build
-python3 docker/gitea/sample-config.py --create
-
-# Vault backend
-docker compose -f docker/docker-compose.yml --profile vault up -d --build
-python3 docker/openbao/sample-config.py --create
-```
 
 ## Future: Spring Runtime Refresh
 

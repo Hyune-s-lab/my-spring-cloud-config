@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    config:
+      server:
+        prefix: /config
+        vault:
+          backend: kv
+          kv-version: 2
+          profile-separator: /
+          authentication: TOKEN
+          host: ${VAULT_HOST}
+          port: ${VAULT_PORT}
+          scheme: ${VAULT_SCHEME}
+          token: ${VAULT_TOKEN}

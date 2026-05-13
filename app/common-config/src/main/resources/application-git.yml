@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    config:
+      server:
+        prefix: /config
+        git:
+          uri: ${GIT_CONFIG_REPO_URI}
+          default-label: ${GIT_CONFIG_REPO_DEFAULT_LABEL}

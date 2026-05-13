@@ -1,9 +1,6 @@
 spring:
   application:
     name: common-config
-  config:
-    import:
-      - classpath:openbao.yml
   threads:
     virtual:
       enabled: true
@@ -27,3 +24,17 @@ springdoc:
     display-request-duration: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
+
+---
+spring.config.activate.on-profile: local
+
+GIT_CONFIG_REPO_URI: http://localhost:3100/common-config/config-repo.git
+GIT_CONFIG_REPO_DEFAULT_LABEL: main
+
+VAULT_HOST: localhost
+VAULT_PORT: 8200
+VAULT_SCHEME: http
+VAULT_TOKEN: example
+
+---
+spring.config.activate.on-profile: onprem

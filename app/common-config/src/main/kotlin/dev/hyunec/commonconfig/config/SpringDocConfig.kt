@@ -12,10 +12,10 @@ import org.springframework.context.annotation.Configuration
 class SpringDocConfig {
 
     @Bean
-    fun phase1OpenApiCustomizer(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+    fun configLookupOpenApiCustomizer(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
         val paths = Paths()
         openApi.paths
-            .filterKeys { path -> path in PHASE_1_PATHS }
+            .filterKeys { path -> path in CONFIG_LOOKUP_PATHS }
             .forEach { (path, pathItem) -> paths.addPathItem(path, pathItem) }
         openApi.paths(paths)
     }
@@ -26,7 +26,7 @@ class SpringDocConfig {
             Info()
                 .title("Common Config API")
                 .version("0.0.1")
-                .description("OpenBao backed Spring Cloud Config API"),
+                .description("Spring Cloud Config standard lookup API"),
         )
         .tags(
             listOf(
@@ -37,7 +37,7 @@ class SpringDocConfig {
         )
 
     private companion object {
-        val PHASE_1_PATHS = setOf(
+        val CONFIG_LOOKUP_PATHS = setOf(
             "/config/{name}/{profiles}",
             "/config/{name}-{profiles}.yaml",
             "/config/{name}-{profiles}.yml",

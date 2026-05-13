@@ -1,7 +1,33 @@
 name: common-config
 
 services:
+  gitea:
+    profiles:
+      - git
+    image: gitea/gitea:1.26.1
+    container_name: common-config-gitea
+    ports:
+      - "3100:3000"
+      # - "2222:22" # Spring Cloud Config는 HTTP Git URL을 사용하므로 SSH clone 포트는 기본으로 열지 않습니다.
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__server__ROOT_URL: http://localhost:3100/
+      GITEA__server__DISABLE_SSH: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+    volumes:
+      - gitea-data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:3000/api/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   openbao:
+    profiles:
+      - vault
     image: ghcr.io/openbao/openbao:2.5.3
     container_name: common-config-openbao
     cap_add:
@@ -22,12 +48,31 @@ services:
       timeout: 5s
       retries: 12
 
-  common-config:
+  common-config-git:
+    profiles:
+      - git
     build:
       context: ..
       dockerfile: Dockerfile
     image: ${COMMON_CONFIG_IMAGE:-common-config:latest}
-    container_name: common-config-server
+    container_name: common-config-server-git
+    depends_on:
+      - gitea
+    ports:
+      - "8085:8085"
+    environment:
+      GIT_CONFIG_REPO_URI: "http://gitea:3000/common-config/config-repo.git"
+      GIT_CONFIG_REPO_DEFAULT_LABEL: "main"
+      SPRING_PROFILES_ACTIVE: "onprem,git"
+
+  common-config-vault:
+    profiles:
+      - vault
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: ${COMMON_CONFIG_IMAGE:-common-config:latest}
+    container_name: common-config-server-vault
     depends_on:
       - openbao
     ports:
@@ -35,10 +80,11 @@ services:
     env_file:
       - .env
     environment:
-      OPENBAO_HOST: "openbao"
-      OPENBAO_PORT: "8200"
-      OPENBAO_SCHEME: "http"
-      SPRING_PROFILES_ACTIVE: "onprem"
+      VAULT_HOST: "openbao"
+      VAULT_PORT: "8200"
+      VAULT_SCHEME: "http"
+      SPRING_PROFILES_ACTIVE: "onprem,vault"
 
 volumes:
+  gitea-data:
   openbao-data:

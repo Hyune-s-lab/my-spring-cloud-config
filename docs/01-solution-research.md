@@ -2,7 +2,9 @@
 
 ## 결론
 
-현재 실험의 방향은 **OpenBao 기반 저장소를 Gitea 기반 Git 저장소로 바꿔보는 것**입니다. Gitea는 Git 구현체라기보다 self-hosted Git forge이고, Spring Cloud Config 입장에서는 일반 Git remote로 보입니다. 그래서 설정 조회 서버 관점의 전환은 비교적 쉽습니다.
+이 문서는 구현 완료 상태를 설명하지 않고, 공통 설정 관리 서버를 제로베이스에서 설계하기 위한 후보를 비교합니다. Spring Cloud Config를 선택한다면 Gitea는 Spring Cloud Config 입장에서 일반 Git remote로 보이므로 Git backend 후보가 됩니다.
+
+새로 검토한 **Apollo**는 Spring Cloud Config의 backend가 아니라 Portal, Admin Service, Config Service, DB, SDK를 포함한 독립형 설정 관리 제품입니다. 특히 회사 요구가 `application / profile / cluster` 3중 구조라면, `application / profile` 중심인 Spring Cloud Config보다 `appId / clusterName / namespaceName`을 직접 노출하는 Apollo가 더 자연스럽습니다. 자세한 내용은 [Apollo 대안 리서치](02-apollo-alternative.md)에 분리했습니다.
 
 - Gitea + Spring Config Git backend는 `label/version` 모델, commit history, pull request review, webhook 흐름이 자연스럽습니다.
 - OpenBao KV path 구조를 Spring Config Git backend의 파일 구조로 옮기는 migration은 필요합니다.
@@ -11,20 +13,21 @@
 
 | Solution                   | Self-hosted           | SDK/API                       | UI | Audit/Persistence                 | Runtime Updates          | Pros                                                                                 | Cons                                                                                                |
 |----------------------------|-----------------------|-------------------------------|----|-----------------------------------|--------------------------|--------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Apollo                     | ✅                     | ✅ Java/.NET SDK<br>✅ HTTP API | ✅  | ✅ DB release/version<br>✅ rollback | ✅ SDK long polling/polling | `appId/clusterName/namespaceName` 구조라 회사의 `application/profile/cluster` 모델에 더 잘 맞습니다.<br>Portal, release, rollback, runtime update를 제품 기능으로 제공합니다. | Spring Cloud Config backend가 아니라 별도 config center입니다.<br>Kotlin Spring Boot 4+/Java 25 조합에서 client 호환성 검증이 필요합니다. |
 | Gitea + Spring Config Git  | ✅                     | ✅ Git<br>✅ HTTP API           | ✅  | ✅ Git commit history<br>✅ PR trace | ✅ Webhook + Bus 확장      | Spring Cloud Config Git backend와 가장 자연스럽게 맞습니다.<br>branch/tag/commit 모델을 그대로 활용할 수 있습니다. | secret 저장소가 아니므로 민감값 관리에는 부적합합니다.<br>OpenBao KV path에서 Git 파일 구조로 migration이 필요합니다.          |
 | OpenBao + Spring Config Vault | ✅                  | ✅ HTTP API<br>⚠️ generic clients | ✅  | ✅ KV v2 versioning<br>✅ audit devices | ⚠️ 별도 trigger 필요       | versioned KV, audit, policy, UI를 self-hosted로 제공합니다.                                  | Spring Config의 `label/version/state`와 자연스럽게 맞지 않습니다.<br>KV 변경 webhook callback이 기본 제공되지 않습니다.       |
-| Spring Cloud Config        | ✅                     | ✅ HTTP API<br>✅ Spring client | ❌  | ⚠️ backend 의존                      | ✅ Actuator/Bus 확장       | Git/Vault backend, Spring client, refresh 흐름을 공식 기능으로 제공합니다.                     | feature flag evaluation은 소비 애플리케이션이 직접 처리합니다.<br>필요해지면 facade를 추가합니다.                            |
+| Spring Cloud Config        | ✅                     | ✅ HTTP API<br>✅ Spring client | ❌  | ⚠️ backend 의존                      | ✅ Actuator/Bus 확장       | Git/Vault backend, Spring client, refresh 흐름을 공식 기능으로 제공합니다.                     | 기본 조회 모델이 `application/profile` 중심입니다. `label`은 cluster가 아니라 branch/tag/commit 같은 version label입니다. |
 | Unleash                    | ⚠️ Enterprise license | ✅ 다언어 SDK                     | ✅  | ⚠️ PostgreSQL 필수<br>⚠️ audit 제한   | ✅ SDK polling/cache      | feature flag 도메인이 성숙하고 self-hosted, 관리자 UI, 다언어 SDK를 제공합니다.                       | OSS는 project 1개, environment 2개 제한이 있어 `local/dev/qa/live/jp-live` 요구와 충돌합니다. PostgreSQL 운영도 필요합니다. |
 | OpenFeature                | ✅                     | ✅ 표준 SDK/API                  | ❌  | ❌ 제공 안 함                          | ⚠️ provider 구현 의존      | Java/Kotlin, Node.js, Python 등에서 flag evaluation API를 표준화할 수 있습니다.                 | 서버 제품이 아니므로 관리자 UI, 저장소, audit/history, runtime update 경로는 별도로 필요합니다.                              |
 | Vercel Edge Config / Flags | ❌                     | ⚠️ OpenFeature 지원             | ✅  | ✅ Vercel managed                  | ✅ platform 제공          | dashboard, targeting, segment, environment control, OpenFeature 지원 등 UX 참고 가치가 큽니다. | Vercel 플랫폼 의존으로 self-hosted가 불가능하므로 핵심 솔루션 후보에서 기각합니다.                                             |
 | AWS KMS                    | ❌                     | ⚠️ AWS SDK                    | ⚠️ | ✅ AWS managed<br>✅ CloudTrail     | ❌ config runtime 아님     | secret/key management와 audit 설계 참고점이 있습니다.                                          | AWS managed service이고 feature flag/config 관리 도구가 아니므로 핵심 솔루션 후보에서 기각합니다.                           |
 
-## OpenBao에서 Gitea로 바꿀 때의 판단
+## OpenBao 후보와 Gitea 후보 비교
 
 | Concern | OpenBao 방식 | Gitea 방식 | 판단 |
 |---------|--------------|------------|------|
-| Spring Config backend | Vault backend | Git backend | Spring Cloud Config가 둘 다 지원하므로 서버 설정 교체는 단순합니다. |
-| 저장 모델 | `kv/{application}/{profile}` path | `{application}-{profile}.yml` 파일 | 조회 API는 유지할 수 있지만 데이터 구조 migration이 필요합니다. |
+| Spring Config backend | Vault backend | Git backend | Spring Cloud Config를 선택한다면 둘 다 backend 후보가 됩니다. |
+| 저장 모델 | `kv/{application}/{profile}` path | `{application}-{profile}.yml` 파일 | Spring Config API shape를 선택하면 조회 응답 shape는 유사하게 둘 수 있지만 데이터 구조 설계는 달라집니다. |
 | Version | OpenBao KV v2 path별 version | Git commit hash | Git 방식이 Spring Config의 `version/label` 모델과 더 잘 맞습니다. |
 | 변경 이력 | KV metadata + audit device | commit history + PR review | 일반 config 이력은 Git이 더 읽기 쉽습니다. API-level audit은 OpenBao가 더 강합니다. |
 | 변경 알림 | KV 변경 webhook 없음 | Gitea repository webhook | Gitea가 Spring Cloud Config Monitor와 더 잘 맞습니다. |
@@ -32,6 +35,19 @@
 | 운영 부담 | OpenBao storage/unseal/policy 이해 필요 | Gitea repository/backup/DB 이해 필요 | Git 운영에 익숙한 팀이면 Gitea가 더 낮은 진입 장벽일 수 있습니다. |
 
 ## 후보별 메모
+
+### Apollo
+
+- self-hosted configuration management system입니다.
+- Portal UI, Admin Service, Config Service, ApolloPortalDB, ApolloConfigDB로 구성됩니다.
+- Quick Start는 H2 또는 MySQL로 로컬 실행할 수 있고, Docker Quick Start는 `apollo-quick-start`와 `mysql:8.0` 컨테이너를 사용합니다.
+- 분산 배포는 MySQL 5.6.5+를 기본 전제로 하며, `ApolloPortalDB`는 보통 1개, `ApolloConfigDB`는 환경별 1개를 둡니다.
+- 클라이언트는 Java/.NET SDK 또는 HTTP API를 사용합니다. Java/Spring은 Config Data Loader 방식으로 `spring.config.import=apollo://application` 같은 통합이 가능합니다.
+- 변경 전파는 SDK의 HTTP long polling과 주기 polling fallback 구조입니다.
+- Spring Cloud Config `Environment` 응답과 JSON shape가 다릅니다. 제로베이스에서는 Apollo API를 직접 쓰고, Spring Config 응답 shape가 필요할 때만 adapter/facade를 검토합니다.
+- PostgreSQL은 공식 주 경로가 아니고 오래된 커뮤니티 포팅 사례만 문서에 언급됩니다. 현재 로컬 `local-postgres`는 Apollo 운영 DB로 바로 재사용하기 어렵습니다.
+
+출처: [Apollo GitHub](https://github.com/apolloconfig/apollo), [Apollo Quick Start](https://www.apolloconfig.com/#/zh/deployment/quick-start), [Apollo Docker Quick Start](https://www.apolloconfig.com/#/zh/deployment/quick-start-docker), [Apollo Distributed Deployment Guide](https://www.apolloconfig.com/#/zh/deployment/distributed-deployment-guide), [Apollo Java SDK Guide](https://www.apolloconfig.com/#/zh/client/java-sdk-user-guide), [Apollo Other Language HTTP Client Guide](https://www.apolloconfig.com/#/zh/client/other-language-client-user-guide), [Apollo Open API Platform](https://www.apolloconfig.com/#/zh/portal/apollo-open-api-platform)
 
 ### Gitea
 
@@ -50,7 +66,7 @@
 - KV v2로 versioned key/value 저장, soft delete, undelete, metadata를 지원합니다.
 - audit device가 API request/response를 기록하므로 변경 추적 기반을 제공합니다.
 - Web UI와 HTTP API가 있어 운영자가 직접 관리할 수 있습니다.
-- feature flag 제품은 아니므로 schema 검증, entitlement, 프론트 projection API가 필요해지면 common-config 서버가 담당해야 합니다.
+- feature flag 제품은 아니므로 schema 검증, entitlement, 프론트 projection API가 필요해지면 별도 공통 설정 API 계층이 담당해야 합니다.
 - Spring Cloud Config Vault backend로 조회할 수 있지만 `label/version/state` 모델은 Git backend보다 덜 자연스럽습니다.
 - KV 변경 webhook callback이 기본 제공되지 않아 refresh trigger는 별도 설계가 필요합니다.
 
@@ -63,8 +79,8 @@
 - Vault backend도 공식 지원하므로 OpenBao를 계속 사용할 수도 있습니다.
 - Spring client, `Environment`, `PropertySource` 모델과 잘 맞습니다.
 - Actuator refresh와 Spring Cloud Bus로 런타임 refresh 확장이 가능합니다.
-- feature flag evaluation은 제공하지 않으므로, Phase 1에서는 프론트가 조회된 설정 값을 직접 판단합니다.
-- non-Spring 서비스는 우선 Spring Cloud Config HTTP API를 사용하고, 필요해지면 별도 REST projection API와 polling/ETag/SSE 방식을 추가합니다.
+- feature flag evaluation은 제공하지 않으므로, Spring Cloud Config를 선택하더라도 소비자가 조회된 설정 값을 직접 판단합니다.
+- non-Spring 서비스는 Spring Cloud Config HTTP API를 직접 쓰거나, 필요하면 별도 REST projection API와 polling/ETag/SSE 방식을 추가합니다.
 
 #### Spring Runtime Refresh 판단 기준
 
@@ -83,10 +99,10 @@ Spring Cloud Config는 설정을 key 단위로 부분 조회하기보다 `applic
 ### Unleash
 
 - feature flag 도메인, 관리자 UI, 다언어 SDK가 강점입니다.
-- OSS는 project 1개, environment 2개 제한이 있어 현재 환경 요구와 충돌합니다.
+- OSS는 project 1개, environment 2개 제한이 있어 다중 환경 요구와 충돌할 수 있습니다.
 - self-hosted 운영에는 PostgreSQL이 필요합니다.
 - 런타임 변경은 SDK polling/cache 구조로 처리합니다.
-- common-config 전체보다는 feature flag 제품에 가깝습니다.
+- 공통 설정 관리 전체보다는 feature flag 제품에 가깝습니다.
 
 출처: [Unleash feature availability and versioning](https://docs.getunleash.io/support/availability), [Unleash OSS and Enterprise comparison](https://docs.getunleash.io/support/oss-comparison), [Configure Unleash](https://docs.getunleash.io/deploy/configuring-unleash), [Unleash SDK overview](https://docs.getunleash.io/sdks), [Unleash GitHub](https://github.com/Unleash/unleash)
 

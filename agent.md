@@ -6,6 +6,7 @@
 
 - 요구사항: [docs/00-requirements.md](docs/00-requirements.md)
 - 솔루션 리서치와 결론: [docs/01-solution-research.md](docs/01-solution-research.md)
+- Apollo 대안 리서치: [docs/02-apollo-alternative.md](docs/02-apollo-alternative.md)
 
 ## 작업 규칙
 
@@ -28,7 +29,9 @@
 
 ## 현재 방향
 
-- 핵심 방향은 OpenBao를 UI/저장소/audit 계층으로 두고, Spring 서비스는 Spring Cloud Config Server의 Vault/OpenBao backend를 사용하게 하는 것입니다.
-- Common Config Server는 우선 Spring Cloud Config 표준 조회 서버로만 동작합니다.
-- 프론트도 우선 Spring Cloud Config HTTP 응답을 명시적으로 조회해서 최신 설정을 가져갑니다.
-- Python, Node.js 등 비 Spring 서비스의 HTTP 기반 조회 방식은 future 범위에서 검토합니다.
+- 이 저장소는 아직 구현이 구성 완료됐다고 전제하지 않습니다. Spring Cloud Config, Gitea, OpenBao, Apollo 모두 리서치/PoC 후보로 봅니다.
+- Spring Cloud Config는 후보 API shape와 backend 연동 방식의 참고안입니다. 이미 표준 조회 서버가 존재한다고 쓰지 않습니다.
+- Apollo는 새 대안으로 조사 중입니다. Apollo는 Spring Cloud Config backend가 아니라 독립형 설정 관리 제품이므로, 제로베이스 PoC는 Apollo SDK/HTTP API를 직접 쓰는 방향이 자연스럽습니다.
+- 회사 서비스 표준은 Kotlin Spring, Java 25, Spring Boot 4+입니다.
+- 회사 설정 모델은 `application / profile / cluster` 3중 구조입니다. Spring Config의 `label`은 cluster가 아니라 version/branch label로 봅니다.
+- Python, Node.js 등 비 Spring 서비스의 HTTP 기반 조회 방식도 Apollo direct API를 우선 기준으로 보고, Spring Config 응답 shape는 필요할 때만 facade로 검토합니다.

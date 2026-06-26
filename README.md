@@ -1,6 +1,6 @@
 # my-spring-cloud-config
 
-Git 또는 Vault-compatible 저장소를 사용하고, Spring Cloud Config 표준 API로 설정을 조회하는 common-config 서버입니다.
+공통 설정 관리 서버를 설계하기 위한 리서치/PoC 준비 문서입니다. 아직 Spring Cloud Config, Git backend, Vault backend, Apollo 중 어느 방식도 구성 완료된 전제로 보지 않습니다.
 
 ## Requirements
 
@@ -9,44 +9,52 @@ Git 또는 Vault-compatible 저장소를 사용하고, Spring Cloud Config 표�
 
 ## Architecture
 
-| Concern         | Current                                       | Future                                                   |
-|-----------------|-----------------------------------------------|----------------------------------------------------------|
-| 온프레미스 설치        | 저장소와 common-config를 Docker Compose로 함께 실행     | K8s 배포 시 저장소 PVC를 연결하거나 저장소를 독립 운영                         |
-| 관리자 UI          | 저장소가 제공하는 UI를 우선 사용                         | 별도 관리자 UI는 schema, 권한, 승인 흐름이 필요해질 때 추가                  |
-| 설정 조회 API       | Spring Cloud Config 표준 API 사용                 | -                                                        |
-| Feature flag 판단 | 서버가 evaluation하지 않고 소비 애플리케이션이 판단             | -                                                        |
-| Version/history | Git commit 또는 Vault-compatible 저장소의 version/audit 사용 | 별도 facade가 필요해지면 응답 모델에 metadata projection 추가              |
-| Runtime refresh | 명시적 fetch로 시작                                 | Spring 서비스는 Actuator/Bus, 비 Spring은 별도 client contract 검토 |
+| Concern         | PoC에서 검토할 방향                                      | 후속 검토                                                   |
+|-----------------|---------------------------------------------------|----------------------------------------------------------|
+| 온프레미스 설치        | 저장소/설정 관리 제품과 조회 서버를 로컬 compose로 검증할 수 있어야 함       | K8s 배포 시 저장소 PVC를 연결하거나 저장소를 독립 운영                         |
+| 관리자 UI          | 별도 UI를 만들기 전 저장소나 설정 관리 제품이 제공하는 UI를 우선 검토        | schema, 권한, 승인 흐름이 필요해질 때 별도 관리자 UI 추가                  |
+| 설정 조회 API       | 후보별 API shape 비교: Spring Config `Environment`, Apollo API 등 | 실제 소비자가 필요한 JSON shape 확정                                   |
+| Feature flag 판단 | 서버가 evaluation하지 않고 소비 애플리케이션이 판단하는 단순 모델부터 검토     | entitlement/team targeting 필요 시 별도 evaluation API 검토             |
+| Version/history | Git commit, Vault-compatible version/audit, Apollo release 모델 비교 | 응답 모델에 metadata projection이 필요한지 검토                           |
+| Runtime refresh | 명시적 fetch, SDK polling/long polling 등 후보별 방식 비교          | Spring 서비스는 Actuator/Bus, 비 Spring은 polling/ETag/SSE 등 검토       |
 
 ```mermaid
 sequenceDiagram
     actor Admin as Admin/Operator
-    box rgb(235, 245, 255) Docker Compose
+    box rgb(235, 245, 255) Candidate PoC
         participant Store as Config Store
-        participant Config as Spring Cloud Config Server
+        participant Config as Config API Server
     end
     participant Client as Client
     Admin ->> Store: 저장소 UI/API에서 설정 변경
     Store ->> Store: 설정 저장
     Store ->> Admin: 저장 완료
-    Note over Store, Config: Git은 repository fetch, Vault는 KV read 방식으로 조회
-    Client ->> Config: GET /config/{application}/{profile}
-    Config ->> Store: backend별 설정 조회
-    Config ->> Client: Spring Config Environment 응답
+    Note over Store, Config: 후보에 따라 Git fetch, KV read, Apollo Config Service 조회
+    Client ->> Config: 후보별 조회 API 호출
+    Config ->> Store: 후보별 설정 조회
+    Config ->> Client: 후보별 JSON 응답
 ```
 
-## Backend
+## Backend 후보
 
 | Backend profile | Backend type | Local implementation | Config file | Sample data |
 |-----------------|--------------|----------------------|-------------|-------------|
 | `git`           | Git repository | Gitea              | `application-git.yml` | `python3 docker/gitea/sample-config.py --create` |
 | `vault`         | Vault-compatible KV | OpenBao        | `application-vault.yml` | `python3 docker/openbao/sample-config.py --create` |
 
-## 설정 조회
+## Alternative: Apollo
 
-로컬 확인은 [spring-config.http](app/common-config/http-client/spring-config.http) 활용을 권장합니다.
+Apollo는 Spring Cloud Config backend가 아니라 Portal/Admin/Config Service와 DB를 포함한 별도 설정 관리 제품입니다. 조회 API를 제로베이스에서 잡는다면 Apollo SDK 또는 HTTP API를 직접 쓰는 쪽이 자연스럽고, Spring Config `Environment` 응답 shape는 필요할 때만 facade로 추가 검토합니다.
 
-### 실행
+핵심 차이는 조회 차원입니다. Spring Cloud Config는 `application / profile` 중심이고 `label`은 cluster가 아니라 version label입니다. Apollo는 `appId / clusterName / namespaceName`을 API에 직접 노출하므로 회사의 `application / profile / cluster` 모델에 더 잘 맞습니다.
+
+자세한 조사 내용은 [Apollo 대안 리서치](docs/02-apollo-alternative.md)를 봅니다.
+
+## Spring Cloud Config 후보 메모
+
+아래 내용은 Spring Cloud Config를 후보로 둘 때의 API shape와 실행 흐름 예시입니다. 현재 구성 완료 상태를 뜻하지 않습니다.
+
+### 실행 예시
 
 ```bash
 # Git backend
@@ -58,13 +66,13 @@ docker compose -f docker/docker-compose.yml --profile vault up -d --build
 python3 docker/openbao/sample-config.py --create
 ```
 
-Swagger UI:
+Swagger UI 예시:
 
 ```text
 http://localhost:8085/swagger-ui.html
 ```
 
-Backend UI:
+Backend UI 예시:
 
 ```text
 Git backend: http://localhost:3100
@@ -121,18 +129,18 @@ GET http://localhost:8085/config/some-frontend/dev
 }
 ```
 
-## Phase 2
+## Spring Cloud Config + Git 후보
 
-Git backend를 추가하고, 실행 profile로 backend를 선택합니다. Gitea는 로컬 Git 구현체입니다.
+Git backend를 선택하면 Gitea 같은 self-hosted Git forge를 로컬 Git 저장소로 둘 수 있습니다.
 
 ```bash
 SPRING_PROFILES_ACTIVE=local,git
 SPRING_PROFILES_ACTIVE=onprem,git
 ```
 
-## Phase 1
+## Spring Cloud Config + Vault-compatible 후보
 
-Vault backend를 먼저 지원했습니다. 이때는 backend 선택 분기 없이 Vault-compatible 저장소만 대상으로 했습니다.
+Vault-compatible backend를 선택하면 OpenBao 같은 KV 저장소를 후보로 둘 수 있습니다.
 
 ## Future: Spring Runtime Refresh
 
@@ -170,3 +178,4 @@ sequenceDiagram
 
 - [요구사항](docs/00-requirements.md)
 - [솔루션 리서치](docs/01-solution-research.md)
+- [Apollo 대안 리서치](docs/02-apollo-alternative.md)
